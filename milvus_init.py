@@ -2,7 +2,7 @@ import config
 from pymilvus import connections, db, CollectionSchema, Collection
 
 
-milvus_model_conf = config.milvus[config.select_embedding_model['name']]
+milvus_model_conf = config.milvus[config.select_embedding_model_info.model_name]
 
 database_name = milvus_model_conf["database_name"]
 conn = connections.connect(

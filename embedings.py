@@ -6,12 +6,10 @@ from tqdm import tqdm
 from pymilvus import connections, Collection
 
 
-batch_size = 8
-read_content_path = "data/splited.json"
-embeding_model_path = config.select_embedding_model["path"]
+extract_file_info = config.select_extract_file_info
+read_content_path = extract_file_info.split_file_path
 
-contents = []
-batch_json = []
+batch_size, contents, batch_json = 8, [], []
 with codecs.open(read_content_path, mode="r", encoding="utf-8") as f:
     contents = f.read()
 json_array = json.loads(contents)
@@ -19,7 +17,7 @@ json_array = json.loads(contents)
 for i in range(0, len(json_array), batch_size):
     batch_json.append(json_array[i : i + batch_size])
 
-milvus = config.milvus[config.select_embedding_model["name"]]
+milvus = config.milvus[config.select_embedding_model_info.model_name]
 conn = connections.connect(
     host=config.milvus["host"],
     port=config.milvus["port"],
@@ -40,10 +38,10 @@ for i in tqdm(range(0, len(batch_json))):
             {
                 "pk": pk,
                 "previous_pk": previous_pk,
+                "source": extract_file_info.get_source(),
                 "content": content,
                 "embedding": results[j],
-                "title": batch_json[i][j]["title"],
-                "special_title": batch_json[i][j]["special_title"],
+                "meta": {}, # todo
             }
         )
         previous_pk = pk

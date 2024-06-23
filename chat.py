@@ -1,10 +1,11 @@
 import config
 import ollama
+from result import Result, ResultIndex, ResultIndexType
 from pymilvus import connections, Collection
 
 
 def init_milvus():
-    milvus = config.milvus[config.select_embedding_model_info["name"]]
+    milvus = config.milvus[config.select_embedding_model_info.model_name]
     connections.connect(
         host=config.milvus["host"],
         port=config.milvus["port"],
@@ -15,7 +16,7 @@ def init_milvus():
     return collection
 
 
-def recall(question: str, limit: int, collection: Collection):
+def recall(question: str, limit: int, collection: Collection, expr: str = None):
     embeding_result = config.select_embedding_model.encode(question)
 
     def drill_search_result(results):
@@ -27,9 +28,9 @@ def recall(question: str, limit: int, collection: Collection):
                     {
                         "pk": fields["pk"],
                         "previous_pk": fields["previous_pk"],
+                        "source": fields["source"],
+                        "meta": fields["meta"],
                         "content": fields["content"],
-                        "title": fields["title"],
-                        "special_title": fields["special_title"],
                         "above": [],
                         "below": [],
                     }
@@ -38,6 +39,7 @@ def recall(question: str, limit: int, collection: Collection):
 
     return drill_search_result(
         collection.search(
+            expr=expr,
             data=[embeding_result],
             anns_field="embedding",
             param=config.milvus["search_params"],
@@ -69,9 +71,9 @@ def context_augmentation(query_results: list, expansion: int, collection: Collec
                 {
                     "pk": result["pk"],
                     "previous_pk": result["previous_pk"],
+                    "source": result["source"],
+                    "meta": result["meta"],
                     "content": result["content"],
-                    "title": result["title"],
-                    "special_title": result["special_title"],
                 }
             )
         return result_list
@@ -122,21 +124,22 @@ def context_augmentation(query_results: list, expansion: int, collection: Collec
     for i in range(expansion):
         context_augmentation(query_results, 0, collection)
 
-    def build_title(title: list, special_title: str) -> str:
-        title_str = "->".join(title)
-        if len(special_title) != 0:
-            title_str += "({})".format(special_title)
-        return title_str
+    # 需要定义下策略
+    # def build_title(title: list, special_title: str) -> str:
+    #     title_str = "->".join(title)
+    #     if len(special_title) != 0:
+    #         title_str += "({})".format(special_title)
+    #     return title_str
 
-    # 删除不在同一个章节的
-    for result in query_results:
-        title = build_title(result["title"], result["special_title"])
-        result["above"] = list(filter(lambda x: title == build_title(x["title"], x["special_title"]), result["above"]))
-        result["below"] = list(filter(lambda x: title == build_title(x["title"], x["special_title"]), result["below"]))
+    # # 删除不在同一个章节的
+    # for result in query_results:
+    #     title = build_title(result["title"], result["special_title"])
+    #     result["above"] = list(filter(lambda x: title == build_title(x["title"], x["special_title"]), result["above"]))
+    #     result["below"] = list(filter(lambda x: title == build_title(x["title"], x["special_title"]), result["below"]))
     return query_results
 
 
-def chat(query_results: list, question: str):
+def chat(query_results: list, question: str, context: list = None):
     ans_list = []
     for result in query_results:
         content = ""
@@ -144,53 +147,39 @@ def chat(query_results: list, question: str):
             content += r["content"] + "。"
         ans_list.append(
             {
-                "book": "育儿百科",
-                "title": "->".join(result["title"]),
                 "content": content,
             }
         )
 
-    context = "\n\n".join([f"[citation:{i}] {ans['content']} <{ans['book']}:{ans['title']}>" for i, ans in enumerate(ans_list)])
+    data = f"\n\n".join([f"[{i}] {ans['content']}" for i, ans in enumerate(ans_list)])
+    prompt = f"""
+阅读以下知识点，每个知识点以[x]开头，其中x是数字
 
-    user_prompt = f"用户的问题是：{question}"
-    system_prompt = f"""
-        当你收到用户的问题时，请编写清晰、简洁、准确的回答。
-        你会收到一组与问题相关的上下文，每个上下文都以参考编号开始，如[citation:x]，其中x是一个数字；每个上下文都以参考文献结束，如<book:directory>，其中book是书名，directory目录。
-        请使用这些上下文，并在适当的情况下在每个句子的末尾引用上下文。
+{data}
 
-        你的答案必须是正确的，并且使用公正和专业的语气写作。请限制在8192个tokens之内。
-        不要提供与问题无关的信息，也不要重复。
-        不允许在答案中添加编造成分，如果给定的上下文没有提供足够的信息，就说“缺乏关于xx的信息”。
-
-        请用参考编号和参考文献引用上下文，参考编号格式为[citation:x]，参考文献格式为<book:directory>。
-        如果一个句子来自多个上下文，请列出所有适用的引用，如[citation:3][citation:5]。
-        除了代码和特定的名字和引用，你的答案必须用与问题相同的语言编写，如果问题是中文，则回答也是中文。
-
-        这是一组上下文：
-
-        {context}
+使用上述知识点，并用中文回答这个问题：{question}
+最后，需要提炼并总结怎么去处理这个问题
         """
-    response = ollama.chat(
-        model=config.select_ollama_model_info["model_name"],
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt},
-        ],
+
+    print(prompt)
+    output = ollama.generate(
+        model=config.select_ollama_model_info.model_name,
+        prompt=prompt,
+        context=context,
     )
 
-    return response["message"]["content"]
+    return output["response"], output["context"]
 
 
 if __name__ == "__main__":
     collection = init_milvus()
 
-    questions = [
+    questions, context = [
         "小孩比较固执，不顺着他的意思就会一直哭闹，说什么都不听",
         "你和他沟通，他经常就闷着不说话，怎么说都不动",
-        "小孩说话慢，现在两岁半了说话还是不太清楚",
-    ]
+    ], None
     for q in questions:
-        recall_result = recall(question=q, limit=15, collection=collection)
-        recall_result = context_augmentation(query_results=recall_result, expansion=4, collection=collection)
-        ans = chat(query_results=recall_result, question=q)
-        print("问题：{}\n回答：{}\n============================================================".format(q, ans))
+        recall_result = recall(question=q, limit=5, collection=collection)
+        recall_result = context_augmentation(query_results=recall_result, expansion=1, collection=collection)
+        ans, context = chat(query_results=recall_result, question=q, context=context)
+        print(f"\n============================================================\n问题：{q}\n回答：{ans}\n============================================================")

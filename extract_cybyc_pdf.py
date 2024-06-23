@@ -1,14 +1,18 @@
 import re
 import fitz
 import json
+import config
 import codecs
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
+extract_file_info = config.select_extract_file_info
+
 # extract_pdf
-start_page = 42
-end_page = 1235
-pdf_path = "data/美国儿科学会育儿百科(第7版).pdf"
-parse_path = "data/extract.json"
+start_page, end_page = extract_file_info.start_page, extract_file_info.end_page
+
+pdf_path = extract_file_info.file_path
+extract_path = extract_file_info.extract_file_path
+split_contents_path = extract_file_info.split_file_path
 
 # 正常文本块
 normal_title_metas = [
@@ -127,14 +131,13 @@ for page in doc:
 data.append({"content": content, "title": title, "special": special_title})
 
 json_str = json.dumps(data, ensure_ascii=False)
-with codecs.open(parse_path, mode="w", encoding="utf-8") as f:
+with codecs.open(extract_path, mode="w", encoding="utf-8") as f:
     f.write(json_str)
 
 # split
-json_file = "data/extract.json"
-split_contents_path = "data/splited.json"
+
 json_content = "[]"
-with codecs.open(json_file, mode="r", encoding="utf-8") as reader:
+with codecs.open(extract_path, mode="r", encoding="utf-8") as reader:
     json_content = reader.read()
 json_array = json.loads(json_content)
 
