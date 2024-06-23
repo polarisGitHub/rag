@@ -32,7 +32,7 @@ __ollama_model_repo = {
     "qwen2:7b": OllamaModelInfo("qwen2:7b"),
     "wangshenzhi/llama3-8b-chinese-chat-ollama-q8": OllamaModelInfo("wangshenzhi/llama3-8b-chinese-chat-ollama-q8"),
 }
-__select_ollama_model_name = "wangshenzhi/llama3-8b-chinese-chat-ollama-q8"
+__select_ollama_model_name = "qwen2:7b"
 select_ollama_model_info = __ollama_model_repo[__select_ollama_model_name]
 
 # 向量数据库

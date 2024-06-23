@@ -158,10 +158,9 @@ def chat(query_results: list, question: str, context: list = None):
 {data}
 
 使用上述知识点，并用中文回答这个问题：{question}
-最后，需要提炼并总结怎么去处理这个问题
+最后在总结问题回答的基础上，给出解决方案
         """
 
-    print(prompt)
     output = ollama.generate(
         model=config.select_ollama_model_info.model_name,
         prompt=prompt,
