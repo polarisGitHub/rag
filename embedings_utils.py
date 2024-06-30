@@ -11,4 +11,4 @@ embedding_model = SentenceTransformer(select_model.model_path)
 
 
 def encode(contents: list[str]) -> list[list[float]]:
-    return embedding_model.encode(contents)
+    return embedding_model.encode(contents, normalize_embeddings=True)

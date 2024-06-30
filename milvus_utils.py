@@ -29,11 +29,13 @@ def init_milvus(embeding_model_name, milvus_info: MilvuslInfo) -> None:
         )
 
 
-def create_connection(milvus_info: MilvuslInfo) -> None:
+def create_connection(milvus_info: MilvuslInfo, database: str = None) -> None:
     connections.connect(
         host=milvus_info.host,
         port=milvus_info.port,
     )
+    if database:
+        db.using_database(database)
 
 
 def upsert(collection_name: str, data: list[str]) -> None:

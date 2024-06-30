@@ -1,5 +1,7 @@
 name: /home/polaris_he/py/rag/.conda
 channels:
+  - pytorch
+  - nvidia
   - conda-forge
   - defaults
 dependencies:
@@ -23,27 +25,37 @@ dependencies:
   - aws-checksums=0.1.13=hf5f93bc_5
   - aws-crt-cpp=0.18.16=h6a678d5_0
   - aws-sdk-cpp=1.10.55=h721c034_0
-  - blas=1.1=openblas
+  - blas=1.0=mkl
   - boost-cpp=1.78.0=he72f1d9_0
   - bottleneck=1.4.0=py311h18e1886_1
   - brotli-python=1.0.9=py311h6a678d5_8
   - bzip2=1.0.8=h5eee18b_6
   - c-ares=1.28.1=hd590300_0
   - ca-certificates=2024.6.2=hbcca054_0
-  - certifi=2024.6.2=py311h06a4308_0
+  - certifi=2024.6.2=pyhd8ed1ab_0
   - cffi=1.16.0=py311hb3a22ac_0
   - charset-normalizer=3.3.2=pyhd8ed1ab_0
   - click=8.1.7=unix_pyh707e725_0
   - colorama=0.4.6=pyhd8ed1ab_0
+  - cuda-cudart=12.1.105=0
+  - cuda-cupti=12.1.105=0
+  - cuda-libraries=12.1.0=0
+  - cuda-nvrtc=12.1.105=0
+  - cuda-nvtx=12.1.105=0
+  - cuda-opencl=12.4.127=0
+  - cuda-runtime=12.1.0=0
   - cudatoolkit=11.8.0=h6a678d5_0
   - datasets=2.14.4=pyhd8ed1ab_0
   - dill=0.3.7=pyhd8ed1ab_0
+  - ffmpeg=4.3=hf484d3e_0
   - filelock=3.15.4=pyhd8ed1ab_0
   - freetype=2.10.4=h0708190_1
   - frozenlist=1.4.1=py311h459d7ec_0
   - fsspec=2024.6.1=pyhff2d567_0
   - gflags=2.2.2=he1b5a44_1004
   - glog=0.5.0=h48cff8f_0
+  - gmp=6.2.1=h295c915_3
+  - gnutls=3.6.15=he1e5248_0
   - grpc-cpp=1.48.2=he1ff14a_1
   - h2=4.1.0=pyhd8ed1ab_0
   - hpack=4.0.0=pyh9f0ad1d_0
@@ -52,17 +64,25 @@ dependencies:
   - icu=70.1=h27087fc_0
   - idna=3.7=pyhd8ed1ab_0
   - importlib-metadata=8.0.0=pyha770c72_0
+  - intel-openmp=2023.1.0=hdb19cb5_46306
   - jinja2=3.1.4=pyhd8ed1ab_0
   - joblib=1.4.2=pyhd8ed1ab_0
-  - jpeg=9e=h0b41bf4_3
+  - jpeg=9e=h5eee18b_1
   - krb5=1.20.1=h143b758_1
+  - lame=3.100=h7b6447c_0
   - lcms2=2.15=hfd0df8a_0
   - ld_impl_linux-64=2.38=h1181459_1
   - lerc=3.0=h9c3ff4c_0
   - libbrotlicommon=1.0.9=h166bdaf_9
   - libbrotlidec=1.0.9=h166bdaf_9
   - libbrotlienc=1.0.9=h166bdaf_9
+  - libcublas=12.1.0.26=0
+  - libcufft=11.0.2.4=0
+  - libcufile=1.9.1.3=0
+  - libcurand=10.3.5.147=0
   - libcurl=8.7.1=h251f7ec_0
+  - libcusolver=11.4.4.55=0
+  - libcusparse=12.0.2.55=0
   - libdeflate=1.17=h0b41bf4_0
   - libedit=3.1.20230828=h5eee18b_0
   - libev=4.33=hd590300_2
@@ -72,28 +92,43 @@ dependencies:
   - libgfortran-ng=14.1.0=h69a702a_0
   - libgfortran5=14.1.0=hc5f4f2c_0
   - libgomp=14.1.0=h77fa898_0
+  - libiconv=1.16=h5eee18b_3
+  - libidn2=2.3.4=h5eee18b_0
+  - libjpeg-turbo=2.0.0=h9bf148f_0
   - libnghttp2=1.57.0=h2d74bed_0
+  - libnpp=12.0.2.50=0
+  - libnvjitlink=12.1.105=0
+  - libnvjpeg=12.1.1.14=0
   - libopenblas=0.3.27=pthreads_h413a1c8_0
   - libpng=1.6.39=h5eee18b_0
   - libprotobuf=3.20.3=he621ea3_0
   - libssh2=1.10.0=ha35d2d1_2
   - libstdcxx-ng=11.2.0=h1234567_1
+  - libtasn1=4.19.0=h5eee18b_0
   - libthrift=0.15.0=h1795dd8_2
   - libtiff=4.5.1=h6a678d5_0
+  - libunistring=0.9.10=h27cfd23_0
   - libuuid=1.41.5=h5eee18b_0
   - libwebp-base=1.4.0=hd590300_0
+  - llvm-openmp=14.0.6=h9e868ea_0
   - lz4-c=1.9.4=h6a678d5_1
   - markupsafe=2.1.5=py311h459d7ec_0
+  - mkl=2023.1.0=h213fc3f_46344
+  - mkl-service=2.4.0=py311h5eee18b_1
+  - mkl_fft=1.3.8=py311h5eee18b_0
+  - mkl_random=1.2.4=py311hdb19cb5_0
   - mpmath=1.3.0=pyhd8ed1ab_0
   - multidict=6.0.5=py311h459d7ec_0
   - multiprocess=0.70.15=py311h459d7ec_1
   - ncurses=6.4=h6a678d5_0
+  - nettle=3.7.3=hbbd107a_1
   - networkx=3.3=pyhd8ed1ab_1
   - nltk=3.8.1=pyhd8ed1ab_0
-  - numexpr=2.8.7=py311h812550d_0
-  - numpy=1.26.4=py311h24aa872_0
-  - numpy-base=1.26.4=py311hbfb1bba_0
+  - numexpr=2.8.7=py311h65dcdc2_0
+  - numpy=1.26.4=py311h08b1b3b_0
+  - numpy-base=1.26.4=py311hf175353_0
   - openblas=0.3.27=pthreads_h7a3da1a_0
+  - openh264=2.1.1=h4ff587b_0
   - openjpeg=2.4.0=h3ad879b_0
   - openssl=3.3.1=h4ab18f5_1
   - orc=1.7.4=hb3bc3d3_1
@@ -110,7 +145,9 @@ dependencies:
   - python-tzdata=2024.1=pyhd8ed1ab_0
   - python-xxhash=3.4.1=py311h459d7ec_0
   - python_abi=3.11=2_cp311
-  - pytorch=2.3.0=cpu_py311h991c31c_0
+  - pytorch=2.3.1=py3.11_cuda12.1_cudnn8.9.2_0
+  - pytorch-cuda=12.1=ha16c6d3_5
+  - pytorch-mutex=1.0=cuda
   - pytz=2024.1=pyhd8ed1ab_0
   - pyyaml=6.0.1=py311h459d7ec_1
   - re2=2022.04.01=h27087fc_0
@@ -120,7 +157,7 @@ dependencies:
   - s2n=1.3.27=h1b5e8cb_0
   - safetensors=0.4.3=py311h46250e7_0
   - scikit-learn=1.4.2=py311ha02d727_1
-  - scipy=1.13.1=py311h24aa872_0
+  - scipy=1.13.1=py311h08b1b3b_0
   - sentence-transformers=3.0.1=pyhd8ed1ab_0
   - sentencepiece=0.1.99=py311hdb19cb5_0
   - setuptools=69.5.1=py311h06a4308_0
@@ -128,10 +165,13 @@ dependencies:
   - snappy=1.1.9=hbd366e4_1
   - sqlite=3.45.3=h5eee18b_0
   - sympy=1.12.1=pyh04b8f61_3
+  - tbb=2021.8.0=hdb19cb5_0
   - threadpoolctl=3.5.0=pyhc1e730c_0
   - tk=8.6.14=h39e8969_0
   - tokenizers=0.15.1=py311h22610ee_0
-  - torchvision=0.15.2=cuda118py311h4cc2eb7_0
+  - torchaudio=2.3.1=py311_cu121
+  - torchtriton=2.3.1=py311
+  - torchvision=0.18.1=py311_cu121
   - tqdm=4.66.4=pyhd8ed1ab_0
   - transformers=4.39.3=pyhd8ed1ab_0
   - typing-extensions=4.12.2=hd8ed1ab_0
@@ -149,12 +189,18 @@ dependencies:
   - zstandard=0.22.0=py311haa97af0_0
   - zstd=1.5.5=hc292b87_2
   - pip:
+      - anyio==4.4.0
       - environs==9.5.0
       - grpcio==1.63.0
+      - h11==0.14.0
+      - httpcore==1.0.5
+      - httpx==0.27.0
       - marshmallow==3.21.3
       - milvus-lite==2.4.7
+      - ollama==0.2.1
       - protobuf==5.27.2
       - pymilvus==2.4.4
       - python-dotenv==1.0.1
+      - sniffio==1.3.1
       - ujson==5.10.0
 prefix: /home/polaris_he/py/rag/.conda

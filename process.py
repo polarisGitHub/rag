@@ -1,7 +1,7 @@
 import os
 import json
 import codecs
-from utils.common_utils import sha256
+from common_utils import sha256
 
 
 def process_json(file_name: str, file_prefix: str, processed_file_prefix: str):

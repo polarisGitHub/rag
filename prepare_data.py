@@ -46,14 +46,17 @@ class DataConstructor(object):
                         "meta": {
                             "isbn": item["isbn"],
                             "name": item["name"],
-                            "category": item["name"],
+                            "category": item["category"],
                         },
                     }
                 )
 
-    def milvus_upsert(self, batch_size: int) -> None:
-        for i in tqdm(range(0, len(self.data), batch_size)):
-            upsert(self.embeding_data[i : i + batch_size])
+    def similarity(self):
+        pass
+
+    def milvus_upsert(self, collection_name, batch_size: int) -> None:
+        for i in tqdm(range(0, len(self.embeding_data), batch_size)):
+            upsert(collection_name=collection_name, data=self.embeding_data[i : i + batch_size])
 
 
 if __name__ == "__main__":
@@ -64,7 +67,8 @@ if __name__ == "__main__":
             port=config.milvus["port"],
         ),
     )
-    print("begin:embeding")
+    print("embeding")
     data_construct.embeding(batch_size=8)
-    print("begin:upsert")
-    data_construct.milvus_upsert(batch_size=200)
+    print("insert milvus")
+    collection_name = config.milvus[config.select_embedding_model]["collection_name"]
+    data_construct.milvus_upsert(collection_name=collection_name, batch_size=200)

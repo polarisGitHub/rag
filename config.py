@@ -22,28 +22,31 @@ milvus_common_fields = [
     FieldSchema(name="next_id", dtype=DataType.VARCHAR, max_length=64, description="next text"),
     FieldSchema(name="parent_id", dtype=DataType.VARCHAR, max_length=64, description="parent text"),
     ##
-    FieldSchema(name="paragraph", dtype=DataType.VARCHAR, max_length=64, description="paragraph"),
-    FieldSchema(name="text", dtype=DataType.VARCHAR, max_length=1024, description="text"),
+    FieldSchema(name="paragraph", dtype=DataType.VARCHAR, max_length=512, description="paragraph"),
+    FieldSchema(name="text", dtype=DataType.VARCHAR, max_length=2048, description="text"),
     FieldSchema(name="meta", dtype=DataType.JSON, description="meta"),
 ]
 milvus = {
     "host": "127.0.0.1",
     "port": 19530,
     "search_params": {
-        "metric_type": "COSINE",
+        "metric_type": "L2",
         "params": {"nlist": 128},
     },
     "output_fields": [
-        "pk",
-        "previous_pk",
-        "source",
+        "id",
+        "content_type",
+        "previous_id",
+        "next_id",
+        "parent_id",
+        "paragraph",
+        "text",
         "meta",
-        "content",
     ],
     "vectors_indexes": [
         {
             "field_name": "embedding",
-            "index_params": {"metric_type": "COSINE", "index_type": "IVF_FLAT", "params": {"nlist": 4096}},
+            "index_params": {"metric_type": "L2", "index_type": "IVF_FLAT", "params": {"nlist": 4096}},
             "name": "idx_embedding",
         }
     ],
