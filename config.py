@@ -1,47 +1,30 @@
-from entity.model_info import EmbeddingModelInfo, OllamaModelInfo, TextExtractInfo
 from pymilvus import FieldSchema, DataType
-from sentence_transformers import SentenceTransformer
-
-# 信息提取
-__extract_info = {
-    "cybyc": TextExtractInfo(
-        name="育儿百科",
-        prefix="data/cybyc/",
-        file_path="美国儿科学会育儿百科(第7版).pdf",
-        extract_file_path="extract.json",
-        split_file_path="split.json",
-        start_page=42,
-        end_page=1235,
-    ),
-}
-select_extract_file_name = "cybyc"
-select_extract_file_info = __extract_info[select_extract_file_name]
+from domain.information import EmbeddingModelInfo, OllamaModelInfo
 
 # embedding模型
-__embedding_model_repo = {
-    "m3e_large": EmbeddingModelInfo("m3e_large", "/home/polaris_he/cached_model/m3e-large"),
-    "zpoint_large_embedding_zh": EmbeddingModelInfo("zpoint_large_embedding_zh", "/home/polaris_he/cached_model/zpoint_large_embedding_zh"),
-}
-__select_embedding_model_name = "zpoint_large_embedding_zh"
-select_embedding_model_info = __embedding_model_repo[__select_embedding_model_name]
-select_embedding_model = SentenceTransformer(select_embedding_model_info.model_path)
+select_embedding_model = "zpoint_large_embedding_zh"
 
 # llm模型
+__select_ollama_model_name = "qwen2:7b"
 __ollama_model_repo = {
     "llama3": OllamaModelInfo("llama3"),
     "qwen2:7b": OllamaModelInfo("qwen2:7b"),
     "wangshenzhi/llama3-8b-chinese-chat-ollama-q8": OllamaModelInfo("wangshenzhi/llama3-8b-chinese-chat-ollama-q8"),
 }
-__select_ollama_model_name = "qwen2:7b"
 select_ollama_model_info = __ollama_model_repo[__select_ollama_model_name]
 
 # 向量数据库
 milvus_common_fields = [
-    FieldSchema(name="pk", dtype=DataType.VARCHAR, max_length=64, is_primary=True, description="primary id use sha256"),
-    FieldSchema(name="previous_pk", dtype=DataType.VARCHAR, max_length=64, description="previous primary id"),
-    FieldSchema(name="source", dtype=DataType.VARCHAR, max_length=16, description="source:book,website"),
-    FieldSchema(name="meta", dtype=DataType.JSON),
-    FieldSchema(name="content", dtype=DataType.VARCHAR, max_length=1024),
+    FieldSchema(name="id", dtype=DataType.VARCHAR, max_length=64, is_primary=True, description="primary id"),
+    ##
+    FieldSchema(name="content_type", dtype=DataType.VARCHAR, max_length=16, description="fragment,sentence"),
+    FieldSchema(name="previous_id", dtype=DataType.VARCHAR, max_length=64, description="previous text"),
+    FieldSchema(name="next_id", dtype=DataType.VARCHAR, max_length=64, description="next text"),
+    FieldSchema(name="parent_id", dtype=DataType.VARCHAR, max_length=64, description="parent text"),
+    ##
+    FieldSchema(name="paragraph", dtype=DataType.VARCHAR, max_length=64, description="paragraph"),
+    FieldSchema(name="text", dtype=DataType.VARCHAR, max_length=1024, description="text"),
+    FieldSchema(name="meta", dtype=DataType.JSON, description="meta"),
 ]
 milvus = {
     "host": "127.0.0.1",
@@ -61,13 +44,22 @@ milvus = {
         {
             "field_name": "embedding",
             "index_params": {"metric_type": "COSINE", "index_type": "IVF_FLAT", "params": {"nlist": 4096}},
+            "name": "idx_embedding",
         }
     ],
     "indexes": [
         {
-            "field_name": "previous_pk",
-            "name": "idx_previous_pk",
-        }
+            "field_name": "previous_id",
+            "name": "idx_previous_id",
+        },
+        {
+            "field_name": "next_id",
+            "name": "idx_next_id",
+        },
+        {
+            "field_name": "parent_id",
+            "name": "idx_parent_id",
+        },
     ],
     "m3e_large": {
         "database_name": "rag",
