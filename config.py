@@ -10,6 +10,7 @@ __ollama_model_repo = {
     "llama3": OllamaModelInfo("llama3"),
     "qwen2:7b": OllamaModelInfo("qwen2:7b"),
     "wangshenzhi/llama3-8b-chinese-chat-ollama-q8": OllamaModelInfo("wangshenzhi/llama3-8b-chinese-chat-ollama-q8"),
+    "gemma2": OllamaModelInfo("gemma2"),
 }
 select_ollama_model_info = __ollama_model_repo[__select_ollama_model_name]
 
@@ -31,7 +32,7 @@ milvus = {
     "port": 19530,
     "search_params": {
         "metric_type": "L2",
-        "params": {"nlist": 128},
+        "params": {"nprobe": 64},
     },
     "output_fields": [
         "id",
@@ -45,9 +46,9 @@ milvus = {
     ],
     "vectors_indexes": [
         {
-            "field_name": "embedding",
-            "index_params": {"metric_type": "L2", "index_type": "IVF_FLAT", "params": {"nlist": 4096}},
-            "name": "idx_embedding",
+            "field_name": "embeddings",
+            "index_params": {"metric_type": "L2", "index_type": "IVF_FLAT", "params": {"nlist": 128}},
+            "name": "idx_embeddings",
         }
     ],
     "indexes": [
@@ -77,7 +78,34 @@ milvus = {
         "collection_name": "zpoint_large_embedding_zh",
         "fields": milvus_common_fields
         + [
-            FieldSchema(name="embedding", dtype=DataType.FLOAT_VECTOR, dim=1792),
+            FieldSchema(name="embeddings", dtype=DataType.FLOAT_VECTOR, dim=1792),
         ],
+    },
+}
+
+# 全文检索
+
+elasticsearch = {
+    "uri":"http://localhost:9200",
+    "index": "rag",
+    "body": {
+        "settings": {
+            "number_of_replicas": 0,
+        },
+        "mappings": {
+            "properties": {
+                "content_type": {"type": "keyword"},
+                "previous_id": {"type": "keyword"},
+                "next_id": {"type": "keyword"},
+                "parent_id": {"type": "keyword"},
+                "text": {
+                    "type": "text",
+                    "analyzer": "hanlp_index",
+                    "search_analyzer": "hanlp_standard",
+                },
+                "paragraph": {"type": "keyword"},
+                "meta": {"type": "object"},
+            }
+        },
     },
 }

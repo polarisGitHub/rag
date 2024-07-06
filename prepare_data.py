@@ -2,27 +2,46 @@ import os
 import json
 import codecs
 import config
+import milvus_utils
+import elasticsearch_utils
 from tqdm import tqdm
 from embedings_utils import encode
-from milvus_utils import init_milvus, upsert
+
 from domain.information import MilvuslInfo
 
 
 class DataConstructor(object):
 
-    def __init__(self, prefix: str, milvus_info: MilvuslInfo) -> None:
-        self.prefix = prefix
-        self.milvus_info = milvus_info
+    def __init__(self, embedings_data: list = []) -> None:
         self.json_array = []
-        self.embeding_data = []
+        self.embedings_data = embedings_data
 
-        init_milvus(embeding_model_name=config.select_embedding_model, milvus_info=milvus_info)
+    def load_json(self, prefix: str) -> None:
+        temp_data_list = []
         for file in os.listdir(prefix):
             if file.endswith(".json"):
                 with codecs.open(prefix + file, mode="r", encoding="utf-8") as f:
-                    self.json_array += json.load(f)
+                    temp_data_list += json.load(f)
 
-    def embeding(self, batch_size: int) -> None:
+        for item in temp_data_list:
+            self.json_array.append(
+                {
+                    "id": item["id"],
+                    "content_type": item["content_type"],
+                    "previous_id": item["previous_id"],
+                    "next_id": item["next_id"],
+                    "parent_id": item["parent_id"],
+                    "text": item["text"],
+                    "paragraph": "->".join(item["paragraph"]),
+                    "meta": {
+                        "isbn": item["isbn"],
+                        "name": item["name"],
+                        "category": item["category"],
+                    },
+                }
+            )
+
+    def embeddings(self, batch_size: int) -> None:
         batch_json = []
         for i in range(0, len(self.json_array), batch_size):
             batch_json.append(self.json_array[i : i + batch_size])
@@ -41,34 +60,81 @@ class DataConstructor(object):
                         "next_id": item["next_id"],
                         "parent_id": item["parent_id"],
                         "text": item["text"],
-                        "embedding": results[j],
-                        "paragraph": "->".join(item["paragraph"]),
-                        "meta": {
-                            "isbn": item["isbn"],
-                            "name": item["name"],
-                            "category": item["category"],
-                        },
+                        "embeddings": results[j],
+                        "paragraph": item["paragraph"],
+                        "meta": item["meta"],
                     }
                 )
 
-    def similarity(self):
-        pass
+    def write_to_json(self, json_file: str) -> None:
+        json_list = []
+        for data in self.embeding_data:
+            json_list.append(
+                {
+                    "id": data["id"],
+                    "content_type": data["content_type"],
+                    "previous_id": data["previous_id"],
+                    "next_id": data["next_id"],
+                    "parent_id": data["parent_id"],
+                    "text": data["text"],
+                    "embeddings": data["embeddings"].tolist(),
+                    "paragraph": data["paragraph"],
+                    "meta": data["meta"],
+                }
+            )
+        with codecs.open(json_file, mode="w", encoding="utf-8") as f:
+            json.dump(json_list, f, ensure_ascii=False)
+        json_list.clear()
+
+    def milvus_init(self, milvus_info: MilvuslInfo) -> None:
+        self.milvus_info = milvus_info
+        milvus_utils.init_milvus(
+            embeding_model_name=config.select_embedding_model,
+            milvus_info=self.milvus_info,
+        )
 
     def milvus_upsert(self, collection_name, batch_size: int) -> None:
         for i in tqdm(range(0, len(self.embeding_data), batch_size)):
-            upsert(collection_name=collection_name, data=self.embeding_data[i : i + batch_size])
+            milvus_utils.upsert(collection_name=collection_name, data=self.embeding_data[i : i + batch_size])
+
+    def elasticsearch_init(self, uri: str, index: str = None, body: dict = None):
+        self.elasticsearch_index = index
+        self.elasticsearch = elasticsearch_utils.init_elasticsearch(uri, index, body)
+
+    def elasticsearch_insert(self, batch_size: int) -> None:
+        for i in tqdm(range(0, len(self.json_array), batch_size)):
+            elasticsearch_utils.bulk_insert(
+                elasticsearch=self.elasticsearch,
+                index=self.elasticsearch_index,
+                data=self.json_array[i : i + batch_size],
+            )
 
 
 if __name__ == "__main__":
-    data_construct = DataConstructor(
-        prefix="data/processed/",
-        milvus_info=MilvuslInfo(
-            host=config.milvus["host"],
-            port=config.milvus["port"],
-        ),
+    data_constructor = DataConstructor()
+
+    print("load")
+    data_constructor.load_json(prefix="data/processed/")
+
+    print("insert elasticsearch")
+    data_constructor.elasticsearch_init(
+        config.elasticsearch["uri"],
+        index=config.elasticsearch["index"],
+        body=config.elasticsearch["body"],
     )
-    print("embeding")
-    data_construct.embeding(batch_size=8)
-    print("insert milvus")
-    collection_name = config.milvus[config.select_embedding_model]["collection_name"]
-    data_construct.milvus_upsert(collection_name=collection_name, batch_size=200)
+    data_constructor.elasticsearch_insert(batch_size=500)
+    
+    # print("embeding")
+    # data_constructor.embeddings(batch_size=8)
+
+    # print("write json")
+    # data_constructor.write_to_json("data/embeddings.json")
+    # print("insert milvus")
+    # data_constructor.milvus_init(
+    #     milvus_info=MilvuslInfo(
+    #         host=config.milvus["host"],
+    #         port=config.milvus["port"],
+    #     )
+    # )
+    # collection_name = config.milvus[config.select_embedding_model]["collection_name"]
+    # data_constructor.milvus_upsert(collection_name=collection_name, batch_size=200)

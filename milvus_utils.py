@@ -1,4 +1,5 @@
 import config
+import embedings_utils
 from domain.information import MilvuslInfo
 from pymilvus import connections, db, CollectionSchema, Collection
 
@@ -41,3 +42,38 @@ def create_connection(milvus_info: MilvuslInfo, database: str = None) -> None:
 def upsert(collection_name: str, data: list[str]) -> None:
     collection = Collection(collection_name)
     collection.upsert(data)
+
+
+def search(question: str, limit: int, collection: Collection, expr: str = None):
+    embeding_result = embedings_utils.encode(question)
+    return drill_search_result(
+        collection.search(
+            expr=expr,
+            data=[embeding_result],
+            anns_field="embedding",
+            param=config.milvus["search_params"],
+            limit=limit,
+            output_fields=config.milvus["output_fields"],
+        )
+    )
+
+
+def drill_search_result(results):
+    result_list = []
+    for result in results:
+        for r in result:
+            fields = r.entity.fields
+            result_list.append(
+                {
+                    "id": fields["id"],
+                    "content_type": fields["content_type"],
+                    "previous_id": fields["previous_id"],
+                    "next_id": fields["next_id"],
+                    "parent_id": fields["parent_id"],
+                    "paragraph": fields["paragraph"],
+                    "text": fields["text"],
+                    "meta": fields["meta"],
+                    "distance": r.distance,
+                }
+            )
+    return result_list
