@@ -1,11 +1,12 @@
 import config
 import ollama
-from pymilvus import Collection
 import milvus_utils
+import json
 
+from pymilvus import Collection
 from rerank import Reranker
-from embedings import Embeddings
 from es_search import EsSearch
+from embedings import Embeddings
 from domain.information import MilvusInfo
 
 
@@ -31,12 +32,10 @@ def chat(query_results: list, question: str, context: list = None):
 
 作为一个智能助手，你的回答要尽可能严谨。回答可以忽略评分较低的知识点，如果信息不足，可以询问更多信息。
 
-
-
 请回答问题：{question}
     """
 
-    print(prompt)
+    # print(prompt)
     output = ollama.generate(
         model=config.select_ollama_model_info.model_name,
         prompt=prompt,
@@ -44,7 +43,8 @@ def chat(query_results: list, question: str, context: list = None):
         context=context,
     )
 
-    return output["response"], output["context"]
+    print(output)
+    return output["response"], None  # , output["context"]
 
 
 def vector_recall(question: str, model: Embeddings):
@@ -81,17 +81,32 @@ def elasticsearch_recall(question: str, es_search: EsSearch):
     return result
 
 
-def merge_and_expand(vector_result, elasticsearch_result):
-    return vector_result + elasticsearch_result
+def merge_and_expand(vector_results, elasticsearch_results, query_fun):
+    all_results = vector_results + elasticsearch_results
+    fragments = list(filter(lambda x: x["content_type"] == "fragment", all_results))
+    sentences = list(filter(lambda x: x["content_type"] == "sentence", all_results))
+
+    # sentences -> fragments
+    parent_id_set = set(map(lambda x: x["parent_id"], sentences))
+    s_to_f = query_fun(list(parent_id_set))
+
+    id_set = set()
+    merged = []
+
+    for item in fragments + s_to_f:
+        if item["id"] not in id_set:
+            merged.append(item)
+            id_set.add(item["id"])
+    return merged
 
 
 if __name__ == "__main__":
     # 多路召回，重排序，llm
-    question = "小孩在家里很活泼，到了外面就变得很内向"
+    question = "两岁半小孩，不会分享。喜欢去抢其他小朋友的玩具，拿不到自己想要的玩具，会嚎啕大哭"
 
     # init es
     elastic_search = EsSearch(config.elasticsearch["info"])
-    elasticsearch_result = elasticsearch_recall(question=question, es_search=elastic_search)
+    elasticsearch_results = elasticsearch_recall(question=question, es_search=elastic_search)
 
     # init milvus
     info = config.milvus[config.select_embeddings_model.model_name]
@@ -104,18 +119,25 @@ if __name__ == "__main__":
     )
     collection = Collection(info["collection_name"])
     collection.load()
+
     # init embeddings
     embeddings = Embeddings(config.select_embeddings_model)
-    vector_result = vector_recall(question=question, model=embeddings)
+    vector_results = vector_recall(question=question, model=embeddings)
 
     # 文本合并和扩充
-    result = merge_and_expand(vector_result, elasticsearch_result)
+    result = merge_and_expand(
+        vector_results,
+        elasticsearch_results,
+        lambda x: elastic_search.query_by_parent_id(config.elasticsearch["index"], x),
+    )
 
     # 重排序
     # init reranker
     reranker = Reranker(config.select_reranker_model)
     rerank_text = reranker.rerank(text=question, data=result, text_mapper=lambda x: x["text"])
-    
+
+    print(json.dumps(rerank_text, ensure_ascii=False))
+
     # 提取重排序的作为llm输入
     high_score_rerank_text = list(filter(lambda x: x["score"] > 0, rerank_text))
     if len(high_score_rerank_text) == 0 or len(high_score_rerank_text) < 5:

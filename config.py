@@ -117,4 +117,14 @@ elasticsearch = {
             }
         },
     },
+    "query_fields": [
+        "_id",
+        "content_type",
+        "previous_id",
+        "next_id",
+        "parent_id",
+        "text",
+        "paragraph",
+        "meta",
+    ],
 }
