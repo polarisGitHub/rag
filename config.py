@@ -1,18 +1,27 @@
 from pymilvus import FieldSchema, DataType
-from domain.information import EmbeddingModelInfo, OllamaModelInfo
+from domain.information import EmbeddingModelInfo, OllamaModelInfo, RerankerModelInfo, ElasticSearchInfo
 
-# embedding模型
-select_embedding_model = "zpoint_large_embedding_zh"
+# embeddings模型
+__embeddings_model_repo = {
+    "m3e_large": EmbeddingModelInfo("m3e_large", "/home/polaris_he/cached_model/m3e-large"),
+    "zpoint_large_embedding_zh": EmbeddingModelInfo("zpoint_large_embedding_zh", "/home/polaris_he/cached_model/zpoint_large_embedding_zh"),
+}
+select_embeddings_model = __embeddings_model_repo["zpoint_large_embedding_zh"]
+
+# reranker模型
+__reranker_model_repo = {
+    "bge-reranker-large": RerankerModelInfo("bge-reranker-large", "/home/polaris_he/cached_model/bge-reranker-large"),
+}
+select_reranker_model = __reranker_model_repo["bge-reranker-large"]
 
 # llm模型
-__select_ollama_model_name = "qwen2:7b"
 __ollama_model_repo = {
+    "gemma2": OllamaModelInfo("gemma2"),
     "llama3": OllamaModelInfo("llama3"),
     "qwen2:7b": OllamaModelInfo("qwen2:7b"),
     "wangshenzhi/llama3-8b-chinese-chat-ollama-q8": OllamaModelInfo("wangshenzhi/llama3-8b-chinese-chat-ollama-q8"),
-    "gemma2": OllamaModelInfo("gemma2"),
 }
-select_ollama_model_info = __ollama_model_repo[__select_ollama_model_name]
+select_ollama_model_info = __ollama_model_repo["gemma2"]
 
 # 向量数据库
 milvus_common_fields = [
@@ -86,7 +95,7 @@ milvus = {
 # 全文检索
 
 elasticsearch = {
-    "uri":"http://localhost:9200",
+    "info": ElasticSearchInfo("http://localhost:9200"),
     "index": "rag",
     "body": {
         "settings": {

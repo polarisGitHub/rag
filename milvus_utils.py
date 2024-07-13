@@ -1,10 +1,9 @@
 import config
-import embedings_utils
-from domain.information import MilvuslInfo
+from domain.information import MilvusInfo
 from pymilvus import connections, db, CollectionSchema, Collection
 
 
-def init_milvus(embeding_model_name, milvus_info: MilvuslInfo) -> None:
+def init_milvus(embeding_model_name, milvus_info: MilvusInfo) -> None:
     create_connection(milvus_info)
 
     milvus_model_conf = config.milvus[embeding_model_name]
@@ -30,7 +29,7 @@ def init_milvus(embeding_model_name, milvus_info: MilvuslInfo) -> None:
         )
 
 
-def create_connection(milvus_info: MilvuslInfo, database: str = None) -> None:
+def create_connection(milvus_info: MilvusInfo, database: str = None) -> None:
     connections.connect(
         host=milvus_info.host,
         port=milvus_info.port,
@@ -44,12 +43,11 @@ def upsert(collection_name: str, data: list[str]) -> None:
     collection.upsert(data)
 
 
-def search(question: str, limit: int, collection: Collection, expr: str = None):
-    embeding_result = embedings_utils.encode(question)
+def search(vector, limit: int, collection: Collection, expr: str = None):
     return drill_search_result(
         collection.search(
             expr=expr,
-            data=[embeding_result],
+            data=[vector],
             anns_field="embedding",
             param=config.milvus["search_params"],
             limit=limit,

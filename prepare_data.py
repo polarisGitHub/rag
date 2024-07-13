@@ -3,11 +3,10 @@ import json
 import codecs
 import config
 import milvus_utils
-import elasticsearch_utils
 from tqdm import tqdm
-from embedings_utils import encode
-
-from domain.information import MilvuslInfo
+from embedings import Embeddings
+from es_search import EsSearch
+from domain.information import MilvusInfo, EmbeddingModelInfo, ElasticSearchInfo
 
 
 class DataConstructor(object):
@@ -41,6 +40,9 @@ class DataConstructor(object):
                 }
             )
 
+    def embeddings_init(self, model: EmbeddingModelInfo):
+        self.embeddings_model = Embeddings(model)
+
     def embeddings(self, batch_size: int) -> None:
         batch_json = []
         for i in range(0, len(self.json_array), batch_size):
@@ -49,7 +51,7 @@ class DataConstructor(object):
         for i in tqdm(range(0, len(batch_json))):
             batch_item = batch_json[i]
             batch_contents = [item["text"] for item in batch_item]
-            results = encode(batch_contents)
+            results = self.embeddings_model.encode(batch_contents)
             for j in range(len(batch_item)):
                 item = batch_item[j]
                 self.embeding_data.append(
@@ -86,7 +88,7 @@ class DataConstructor(object):
             json.dump(json_list, f, ensure_ascii=False)
         json_list.clear()
 
-    def milvus_init(self, milvus_info: MilvuslInfo) -> None:
+    def milvus_init(self, milvus_info: MilvusInfo) -> None:
         self.milvus_info = milvus_info
         milvus_utils.init_milvus(
             embeding_model_name=config.select_embedding_model,
@@ -97,13 +99,13 @@ class DataConstructor(object):
         for i in tqdm(range(0, len(self.embeding_data), batch_size)):
             milvus_utils.upsert(collection_name=collection_name, data=self.embeding_data[i : i + batch_size])
 
-    def elasticsearch_init(self, uri: str, index: str = None, body: dict = None):
+    def elasticsearch_init(self, esInfo: ElasticSearchInfo, index: str = None, body: dict = None):
         self.elasticsearch_index = index
-        self.elasticsearch = elasticsearch_utils.init_elasticsearch(uri, index, body)
+        self.elasticsearch = EsSearch(esInfo)
 
     def elasticsearch_insert(self, batch_size: int) -> None:
         for i in tqdm(range(0, len(self.json_array), batch_size)):
-            elasticsearch_utils.bulk_insert(
+            self.elasticsearch.bulk_insert(
                 elasticsearch=self.elasticsearch,
                 index=self.elasticsearch_index,
                 data=self.json_array[i : i + batch_size],
@@ -123,8 +125,9 @@ if __name__ == "__main__":
         body=config.elasticsearch["body"],
     )
     data_constructor.elasticsearch_insert(batch_size=500)
-    
+
     # print("embeding")
+    # data_constructor.embeddings_init(config.select_embeddings_model)
     # data_constructor.embeddings(batch_size=8)
 
     # print("write json")
