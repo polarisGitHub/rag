@@ -127,7 +127,7 @@ def process_json(file_name: str, file_prefix: str, processed_file_prefix: str):
 
 
 if __name__ == "__main__":
-    file_prefix = "data/"
+    file_prefix = "data/book/"
     for f in os.listdir(file_prefix):
         if f.endswith(".json"):
             process_json(f, file_prefix=file_prefix, processed_file_prefix="data/processed/")

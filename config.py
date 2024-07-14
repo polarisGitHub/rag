@@ -32,6 +32,9 @@ milvus_common_fields = [
     FieldSchema(name="next_id", dtype=DataType.VARCHAR, max_length=64, description="next text"),
     FieldSchema(name="parent_id", dtype=DataType.VARCHAR, max_length=64, description="parent text"),
     ##
+    FieldSchema(name="next_distance", dtype=DataType.FLOAT, description="next distance"),
+    FieldSchema(name="previous_distance", dtype=DataType.FLOAT, description="previous distance"),
+    ##
     FieldSchema(name="paragraph", dtype=DataType.VARCHAR, max_length=512, description="paragraph"),
     FieldSchema(name="text", dtype=DataType.VARCHAR, max_length=2048, description="text"),
     FieldSchema(name="meta", dtype=DataType.JSON, description="meta"),
@@ -107,6 +110,8 @@ elasticsearch = {
                 "previous_id": {"type": "keyword"},
                 "next_id": {"type": "keyword"},
                 "parent_id": {"type": "keyword"},
+                "next_distance": {"type": "float"},
+                "previous_distance": {"type": "float"},
                 "text": {
                     "type": "text",
                     "analyzer": "hanlp_index",

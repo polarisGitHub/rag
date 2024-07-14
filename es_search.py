@@ -18,6 +18,7 @@ class EsSearch(object):
         for item in data:
             actions.append(
                 {
+                    "_op_type": "create",
                     "_index": index,
                     "_id": item["id"],
                     "_source": {
@@ -28,6 +29,22 @@ class EsSearch(object):
                         "text": item["text"],
                         "paragraph": item["paragraph"],
                         "meta": item["meta"],
+                    },
+                }
+            )
+        helpers.bulk(self.elasticsearch, actions=actions, raise_on_error=False)
+
+    def bulk_update_distance(self, index: str, data: list[dict]) -> None:
+        actions = []
+        for item in data:
+            actions.append(
+                {
+                    "_op_type": "update",
+                    "_index": index,
+                    "_id": item["id"],
+                    "doc": {
+                        "next_distance": item["next_distance"],
+                        "previous_distance": item["previous_distance"],
                     },
                 }
             )
