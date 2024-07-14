@@ -54,7 +54,7 @@ class DataConstructor(object):
             results = self.embeddings_model.encode(batch_contents)
             for j in range(len(batch_item)):
                 item = batch_item[j]
-                self.embeding_data.append(
+                self.embedings_data.append(
                     {
                         "id": item["id"],
                         "content_type": item["content_type"],
@@ -68,9 +68,18 @@ class DataConstructor(object):
                     }
                 )
 
+    def compute_distance_nearby(self):
+        length = len(self.embedings_data)
+        self.embedings_data[0]["previous_distance"], self.embedings_data[length - 1]["previous_distance"] = -1, -1
+        for i in tqdm(range(length - 1)):
+            data = self.embedings_data[i]
+            next_data = self.embedings_data[i + 1]
+            distance = data["embeddings"] @ next_data["embeddings"].T
+            data["next_distance"], next_data["previous_distance"] = distance, distance
+
     def write_to_json(self, json_file: str) -> None:
         json_list = []
-        for data in self.embeding_data:
+        for data in self.embedings_data:
             json_list.append(
                 {
                     "id": data["id"],
@@ -118,20 +127,21 @@ if __name__ == "__main__":
     print("load")
     data_constructor.load_json(prefix="data/processed/")
 
-    print("insert elasticsearch")
-    data_constructor.elasticsearch_init(
-        config.elasticsearch["uri"],
-        index=config.elasticsearch["index"],
-        body=config.elasticsearch["body"],
-    )
-    data_constructor.elasticsearch_insert(batch_size=500)
+    # print("insert elasticsearch")
+    # data_constructor.elasticsearch_init(
+    #     config.elasticsearch["uri"],
+    #     index=config.elasticsearch["index"],
+    #     body=config.elasticsearch["body"],
+    # )
+    # data_constructor.elasticsearch_insert(batch_size=500)
 
-    # print("embeding")
-    # data_constructor.embeddings_init(config.select_embeddings_model)
-    # data_constructor.embeddings(batch_size=8)
+    print("embeding")
+    data_constructor.embeddings_init(config.select_embeddings_model)
+    data_constructor.embeddings(batch_size=8)
+    data_constructor.compute_distance_nearby()
+    print("write json")
+    data_constructor.write_to_json("data/embeddings.json")
 
-    # print("write json")
-    # data_constructor.write_to_json("data/embeddings.json")
     # print("insert milvus")
     # data_constructor.milvus_init(
     #     milvus_info=MilvuslInfo(

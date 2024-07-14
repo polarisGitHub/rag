@@ -22,20 +22,20 @@ def chat(query_results: list, question: str, context: list = None):
 
     data = f"\n".join([f"[{i}][{ans['score']:.3f}] {ans['content']}" for i, ans in enumerate(ans_list)])
     prompt = f"""
-请阅读以下知识点，每个知识点以[x][y]开头，其中x和y都是数字。x是序号，y是知识点的评分
+请阅读以下知识点，每个知识点以[x][y]开头，其中x和y都是数字。x是序号，y是知识点的评分。引用知识点的，评分不必引用
 
 ------------------------------------
 {data}
 ------------------------------------
 
-使用上述知识点，而不是已有知识回答问题。需要给出两点以上建议并总结
+使用上述知识点，而不是已有知识回答问题。回答需要给出建议并给出结论
 
 作为一个智能助手，你的回答要尽可能严谨。回答可以忽略评分较低的知识点，如果信息不足，可以询问更多信息。
 
 请回答问题：{question}
     """
 
-    # print(prompt)
+    print(prompt)
     output = ollama.generate(
         model=config.select_ollama_model_info.model_name,
         prompt=prompt,
@@ -43,7 +43,7 @@ def chat(query_results: list, question: str, context: list = None):
         context=context,
     )
 
-    print(output)
+    # print(output)
     return output["response"], None  # , output["context"]
 
 
@@ -102,7 +102,7 @@ def merge_and_expand(vector_results, elasticsearch_results, query_fun):
 
 if __name__ == "__main__":
     # 多路召回，重排序，llm
-    question = "两岁半小孩，不会分享。喜欢去抢其他小朋友的玩具，拿不到自己想要的玩具，会嚎啕大哭"
+    question = "小孩比较爱面子，在外人面前说了她就会很不高兴。在外面摔了也会先假装没事，回家后才告诉家人很痛"
 
     # init es
     elastic_search = EsSearch(config.elasticsearch["info"])
